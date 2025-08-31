@@ -1,11 +1,11 @@
 --[[
-    Queen script - Versão 16.2 (Plataforma Fantasma para Celular)
-    - INSTANT STEAL: Lógica de teleporte refeita para usar o método da "plataforma fantasma",
-      que tem maior chance de bypassar sistemas de anti-cheat.
-    - O botão "TP" na tela agora ativa este novo método.
+    Queen script - Versão 16.3 (Teleporte para a Base)
+    - INSTANT STEAL: Refeito para uma nova função de "Teleporte para a Base".
+    - Ao clicar no botão "TP" na tela, o script teleporta o jogador de volta
+      para a sua própria base/plot no mapa.
 ]]
 
--- ==================== VARIÁVEIS E SERVIÇOS ====================
+-- ==================== VARIÁRIAS E SERVIÇOS ====================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -43,40 +43,30 @@ createToggleButton({ Parent = sec, Text = "Instant Steal", StateKey = "instant_s
 local ak_label = Instance.new("TextLabel", sec); ak_label.Text = "AUTO KICK"; ak_label.Position = UDim2.new(0, 20, 0, 133); ak_label.Size = UDim2.new(0, 100, 0, 26); ak_label.BackgroundTransparency = 1; ak_label.TextColor3 = Style.Color.Text; ak_label.Font = Style.Font.Subtitle; ak_label.TextSize = Style.TextSize.Subtitle
 local autoKickBtn = createToggleButton({ Parent = sec, Text = "OFF", StateKey = "auto_kick", Position = UDim2.new(0, 120, 0, 133), Size = UDim2.new(0, 60, 0, 26), OnColor = Style.Color.Success, OffColor = Style.Color.Neutral }); autoKickBtn:GetPropertyChangedSignal("BackgroundColor3"):Connect(function() autoKickBtn.Text = state.auto_kick and "ON" or "OFF" end)
 
--- [!] INÍCIO DA NOVA SEÇÃO PARA CELULAR
--- ==================== BOTÃO DE TELEPORTE PARA CELULAR ====================
-local teleportButton = Instance.new("TextButton", gui)
-teleportButton.Size = UDim2.new(0, 80, 0, 80); teleportButton.Position = UDim2.new(1, -100, 1, -180); teleportButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255); teleportButton.TextColor3 = Color3.new(1, 1, 1); teleportButton.Text = "TP"; teleportButton.Font = Enum.Font.SourceSansBold; teleportButton.TextSize = 30; teleportButton.Visible = false
-local tpCorner = Instance.new("UICorner", teleportButton); tpCorner.CornerRadius = UDim.new(0.5, 0)
-local isClipping = false
+-- [!] INÍCIO DA NOVA SEÇÃO
+-- ==================== BOTÃO DE TELEPORTE PARA A BASE ====================
+local returnButton = Instance.new("TextButton", gui)
+returnButton.Size = UDim2.new(0, 80, 0, 80); returnButton.Position = UDim2.new(1, -100, 1, -180); returnButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255); returnButton.TextColor3 = Color3.new(1, 1, 1); returnButton.Text = "BASE"; returnButton.Font = Enum.Font.SourceSansBold; returnButton.TextSize = 24; returnButton.Visible = false
+local rbCorner = Instance.new("UICorner", returnButton); rbCorner.CornerRadius = UDim.new(0.5, 0)
 
-local function doTeleportPlatform()
-    if isClipping then return end
+local function teleportToBase()
     local character = LocalPlayer.Character
-    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    local hrp = humanoid and humanoid.RootPart
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    isClipping = true
-    
-    local moveDirection = Workspace.CurrentCamera.CFrame.LookVector
-    local clipPlatform = Instance.new("Part"); clipPlatform.Name = "QueenClipPlatform"; clipPlatform.Size = Vector3.new(4, 1, 4); clipPlatform.Anchored = true; clipPlatform.CanCollide = false; clipPlatform.Transparency = 1; clipPlatform.CFrame = hrp.CFrame * CFrame.new(0, -3, 0); clipPlatform.Parent = Workspace
-    
-    humanoid.PlatformStand = true
-    
-    local goalPosition = clipPlatform.Position + (moveDirection * 15) -- Distância do teleporte
-    local tween = TweenService:Create(clipPlatform, TweenInfo.new(0.15), {Position = goalPosition})
-    tween:Play()
-    tween.Completed:Wait()
-    
-    humanoid.PlatformStand = false
-    clipPlatform:Destroy()
-    
-    wait(0.5)
-    isClipping = false
+    -- Procura pela base do jogador no Workspace. A pasta "Plots" é uma suposição comum.
+    local plotsFolder = Workspace:FindFirstChild("Plots") or Workspace
+    local playerBase = plotsFolder:FindFirstChild(LocalPlayer.Name)
+
+    if playerBase and playerBase.PrimaryPart then
+        -- Teleporta para o centro da base, um pouco acima para não ficar preso
+        hrp.CFrame = playerBase.PrimaryPart.CFrame * CFrame.new(0, 5, 0)
+    else
+        warn("Queen Script: Não foi possível encontrar a base do jogador.")
+    end
 end
 
-teleportButton.MouseButton1Click:Connect(doTeleportPlatform)
+returnButton.MouseButton1Click:Connect(teleportToBase)
 -- =======================================================================
 
 -- ==================== LÓGICA DO ESP DE JOGADOR ====================
@@ -102,8 +92,8 @@ RunService.RenderStepped:Connect(function()
     if state.esp_secret ~= wasEspSecretActive then wasEspSecretActive = state.esp_secret; if state.esp_secret then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local s = false; for _, c in ipairs(d:GetDescendants()) do if c:IsA("TextLabel") and c.Text:lower():find("secret") then s = true; break end end; if s then originalSecretProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 400, 0, 150) end end end else for g, p in pairs(originalSecretProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalSecretProperties = {} end end
     if state.esp_god ~= wasEspGodActive then wasEspGodActive = state.esp_god; if state.esp_god then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local g = false; for _, c in ipairs(d:GetDescendants()) do if c:IsA("TextLabel") and c.Text:lower():find("brainrot god") then g = true; break end end; if g then originalGodProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 450, 0, 180) end end end else for g, p in pairs(originalGodProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalGodProperties = {} end end
 
-    -- Loop para mostrar/esconder o botão de teleporte
-    teleportButton.Visible = state.instant_steal_secundario
+    -- [!] Loop para mostrar/esconder o botão de teleporte para a base
+    returnButton.Visible = state.instant_steal_secundario
 end)
 -- =======================================================
 
