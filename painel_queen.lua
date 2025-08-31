@@ -144,3 +144,31 @@ game.StarterGui:SetCore("SendNotification", {
     Text = "Script carregado com sucesso!";
     Duration = 5;
 })
+
+-- Botão de minimizar painel
+local isMinimized = false
+local minBtn = Instance.new("TextButton", main)
+minBtn.Text = "-"
+minBtn.Position = UDim2.new(1, -32, 0, 4)
+minBtn.Size = UDim2.new(0, 28, 0, 24)
+minBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+minBtn.TextColor3 = Color3.new(1,1,1)
+minBtn.Font = Enum.Font.SourceSansBold
+minBtn.TextSize = 22
+minBtn.BorderSizePixel = 0
+
+-- Elementos que queremos esconder/mostrar ao minimizar
+local elementsToToggle = {}
+for _,v in ipairs(main:GetChildren()) do
+    if v ~= minBtn and v:IsA("GuiObject") then
+        table.insert(elementsToToggle, v)
+    end
+end
+
+minBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    for _,gui in ipairs(elementsToToggle) do
+        gui.Visible = not isMinimized
+    end
+    minBtn.Text = isMinimized and "+" or "-"
+end)
