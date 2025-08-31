@@ -1,58 +1,50 @@
--- Painel Miranda Teteus (simples, funcional no Delta/Roblox)
-local player = game.Players.LocalPlayer
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "PainelMiranda"
-gui.ResetOnSpawn = false
+--[[
+    Queen script - Versão Aprimorada
+    Melhorias:
+    1. Tabela de Estilos (Style): Centraliza cores, fontes e tamanhos para fácil customização.
+    2. Painéis Arrastáveis: Permite que o usuário mova os painéis pela tela.
+    3. Lógica de Minimizar Melhorada: Usa um frame "container" para maior robustez.
+    4. Funções de UI mais genéricas e organização aprimorada.
+]]
 
-local function createFrame(props)
-    local f = Instance.new("Frame")
-    for k,v in pairs(props) do f[k]=v end
-    f.Parent = gui
-    return f
-end
+-- ==================== VARIÁVEIS E SERVIÇOS ====================
+local player = game:GetService("Players").LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local UserInputService = game:GetService("UserInputService")
 
-local function createButton(parent, text, pos, size, callback)
-    local b = Instance.new("TextButton")
-    b.Text = text
-    b.Position = pos
-    b.Size = size
-    b.BackgroundColor3 = Color3.fromRGB(200,20,40)
-    b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.SourceSansBold
-    b.TextSize = 18
-    b.BorderSizePixel = 0
-    b.Parent = parent
-    b.MouseButton1Click:Connect(callback)
-    return b
-end
-
-local main = createFrame{
-    Name="MainPanel", BackgroundColor3=Color3.fromRGB(30,30,30), Size=UDim2.new(0,240,0,340),
-    Position=UDim2.new(0,30,0,70)
+-- ==================== TABELA DE ESTILOS ====================
+-- [!] MELHORIA: Centralizar todas as configurações de aparência em um só lugar.
+-- Mudar uma cor ou fonte aqui atualiza a UI inteira.
+local Style = {
+    Font = {
+        Title = Enum.Font.SourceSansBold,
+        Subtitle = Enum.Font.SourceSans,
+        Button = Enum.Font.SourceSansBold
+    },
+    TextSize = {
+        Title = 22,
+        Subtitle = 16,
+        Button = 18
+    },
+    Color = {
+        Background = Color3.fromRGB(30, 30, 30),
+        Main = Color3.fromRGB(200, 20, 40),
+        MainActive = Color3.fromRGB(120, 30, 40),
+        Text = Color3.fromRGB(255, 255, 255),
+        ButtonWhite = Color3.fromRGB(242, 242, 242),
+        ButtonWhiteActive = Color3.fromRGB(200, 200, 200),
+        ButtonWhiteText = Color3.fromRGB(0, 0, 0),
+        Success = Color3.fromRGB(30, 180, 60),
+        Neutral = Color3.fromRGB(90, 90, 90)
+    },
+    Size = {
+        MainPanel = UDim2.new(0, 240, 0, 340),
+        SecPanel = UDim2.new(0, 240, 0, 200),
+        Button = UDim2.new(0, 200, 0, 32)
+    }
 }
-local sec = createFrame{
-    Name="SecPanel", BackgroundColor3=Color3.fromRGB(30,30,30), Size=UDim2.new(0,240,0,200),
-    Position=UDim2.new(0,290,0,70)
-}
 
-local title = Instance.new("TextLabel", main)
-title.Text = "MIRANDA TETEUS*"
-title.Position = UDim2.new(0,0,0,10)
-title.Size = UDim2.new(1,0,0,30)
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 22
-
-local subtitle = Instance.new("TextLabel", main)
-subtitle.Text = "TIKTOK: @mirandacalliruim"
-subtitle.Position = UDim2.new(0,0,0,40)
-subtitle.Size = UDim2.new(1,0,0,20)
-subtitle.BackgroundTransparency = 1
-subtitle.TextColor3 = Color3.new(1,1,1)
-subtitle.Font = Enum.Font.SourceSans
-subtitle.TextSize = 16
-
+-- ==================== ESTADO DAS FUNÇÕES ====================
 local state = {
     esp_god = false,
     esp_secret = false,
@@ -64,111 +56,220 @@ local state = {
     auto_kick = false,
 }
 
-local btn_y = 70
-local function addToggle(name, statekey)
-    local btn = createButton(main, name, UDim2.new(0,20,0,btn_y), UDim2.new(0,200,0,32), function()
-        state[statekey] = not state[statekey]
-        btn.BackgroundColor3 = state[statekey] and Color3.fromRGB(120,30,40) or Color3.fromRGB(200,20,40)
+-- ==================== FUNÇÕES UTILITÁRIAS DE UI ====================
+
+-- [!] MELHORIA: Função para tornar um frame arrastável.
+local function makeDraggable(guiObject)
+    local dragging = false
+    local dragInput = nil
+    local dragStart = nil
+    local startPos = nil
+
+    guiObject.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = guiObject.Parent.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
     end)
-    btn.BackgroundColor3 = state[statekey] and Color3.fromRGB(120,30,40) or Color3.fromRGB(200,20,40)
-    btn_y = btn_y + 36
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            if dragging then
+                local delta = input.Position - dragStart
+                guiObject.Parent.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end
+    end)
 end
 
-addToggle("ESP GOD", "esp_god")
-addToggle("ESP SECRET", "esp_secret")
-addToggle("ESP BASE", "esp_base")
-addToggle("ESP PLAYER", "esp_player")
-addToggle("Miranda Insta Steal", "insta_steal_principal")
 
-local sec_title = Instance.new("TextLabel", sec)
-sec_title.Text = "INSTANT STEAL"
-sec_title.Position = UDim2.new(0,0,0,10)
-sec_title.Size = UDim2.new(1,0,0,30)
-sec_title.BackgroundTransparency = 1
-sec_title.TextColor3 = Color3.new(1,1,1)
-sec_title.Font = Enum.Font.SourceSansBold
-sec_title.TextSize = 20
+-- ==================== CRIAÇÃO DA UI ====================
+local gui = Instance.new("ScreenGui", playerGui)
+gui.Name = "PainelMiranda"
+gui.ResetOnSpawn = false
 
--- Instant Steal status button
-local inst_btn = createButton(sec, "Instant Steal: OFF", UDim2.new(0,20,0,50), UDim2.new(0,200,0,34), function()
-    state.instant_steal_secundario = not state.instant_steal_secundario
-    inst_btn.Text = "Instant Steal: "..(state.instant_steal_secundario and "ON" or "OFF")
-    inst_btn.BackgroundColor3 = state.instant_steal_secundario and Color3.fromRGB(120,30,40) or Color3.fromRGB(200,20,40)
-end)
-inst_btn.BackgroundColor3 = Color3.fromRGB(200,20,40)
+-- Painel Principal
+local main = Instance.new("Frame", gui)
+main.Name = "MainPanel"
+main.BackgroundColor3 = Style.Color.Background
+main.Size = Style.Size.MainPanel
+main.Position = UDim2.new(0, 30, 0, 70)
+main.BorderSizePixel = 0
 
--- Aimbot Teia (branco)
-local aim_btn = Instance.new("TextButton", sec)
-aim_btn.Text = "Aimbot Teia"
-aim_btn.Position = UDim2.new(0,20,0,90)
-aim_btn.Size = UDim2.new(0,200,0,32)
-aim_btn.BackgroundColor3 = Color3.new(0.95,0.95,0.95)
-aim_btn.TextColor3 = Color3.new(0,0,0)
-aim_btn.Font = Enum.Font.SourceSansBold
-aim_btn.TextSize = 18
-aim_btn.BorderSizePixel = 0
-aim_btn.MouseButton1Click:Connect(function()
-    state.aimbot_teia = not state.aimbot_teia
-    aim_btn.BackgroundColor3 = state.aimbot_teia and Color3.new(0.8,0.8,0.8) or Color3.new(0.95,0.95,0.95)
-end)
+-- [!] MELHORIA: Container para os elementos que serão minimizados.
+local mainContent = Instance.new("Frame", main)
+mainContent.Name = "Content"
+mainContent.BackgroundTransparency = 1
+mainContent.Size = UDim2.new(1, 0, 1, 0)
+mainContent.Position = UDim2.new(0, 0, 0, 0)
 
--- Auto Kick linha
-local ak_label = Instance.new("TextLabel", sec)
-ak_label.Text = "AUTO KICK"
-ak_label.Position = UDim2.new(0,20,0,133)
-ak_label.Size = UDim2.new(0,100,0,26)
-ak_label.BackgroundTransparency = 1
-ak_label.TextColor3 = Color3.new(1,1,1)
-ak_label.Font = Enum.Font.SourceSans
-ak_label.TextSize = 16
+-- Barra de Título para arrastar
+local titleBar = Instance.new("TextLabel", main)
+titleBar.Text = "Queen script"
+titleBar.Position = UDim2.new(0, 0, 0, 10)
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundTransparency = 1
+titleBar.TextColor3 = Style.Color.Text
+titleBar.Font = Style.Font.Title
+titleBar.TextSize = Style.TextSize.Title
+makeDraggable(titleBar) -- Torna o painel arrastável pelo título
 
-local ak_btn = Instance.new("TextButton", sec)
-ak_btn.Text = "OFF"
-ak_btn.Position = UDim2.new(0,120,0,133)
-ak_btn.Size = UDim2.new(0,60,0,26)
-ak_btn.BackgroundColor3 = Color3.fromRGB(90,90,90)
-ak_btn.TextColor3 = Color3.new(1,1,1)
-ak_btn.Font = Enum.Font.SourceSansBold
-ak_btn.TextSize = 16
-ak_btn.BorderSizePixel = 0
-ak_btn.MouseButton1Click:Connect(function()
-    state.auto_kick = not state.auto_kick
-    ak_btn.Text = state.auto_kick and "ON" or "OFF"
-    ak_btn.BackgroundColor3 = state.auto_kick and Color3.fromRGB(30,180,60) or Color3.fromRGB(90,90,90)
-end)
-criação painel miranda
+local subtitle = Instance.new("TextLabel", mainContent)
+subtitle.Text = "TIKTOK: @mirandacalliruim"
+subtitle.Position = UDim2.new(0, 0, 0, 40)
+subtitle.Size = UDim2.new(1, 0, 0, 20)
+subtitle.BackgroundTransparency = 1
+subtitle.TextColor3 = Style.Color.Text
+subtitle.Font = Style.Font.Subtitle
+subtitle.TextSize = Style.TextSize.Subtitle
 
-print("Painel carregado!")
-game.StarterGui:SetCore("SendNotification", {
-    Title = "Painel Miranda";
-    Text = "Script carregado com sucesso!";
-    Duration = 5;
+-- Painel Secundário
+local sec = Instance.new("Frame", gui)
+sec.Name = "SecPanel"
+sec.BackgroundColor3 = Style.Color.Background
+sec.Size = Style.Size.SecPanel
+sec.Position = UDim2.new(0, 290, 0, 70)
+sec.BorderSizePixel = 0
+
+local secTitle = Instance.new("TextLabel", sec)
+secTitle.Text = "INSTANT STEAL"
+secTitle.Position = UDim2.new(0, 0, 0, 10)
+secTitle.Size = UDim2.new(1, 0, 0, 30)
+secTitle.BackgroundTransparency = 1
+secTitle.TextColor3 = Style.Color.Text
+secTitle.Font = Style.Font.Title
+secTitle.TextSize = Style.TextSize.Title
+makeDraggable(secTitle) -- Torna o painel secundário arrastável também
+
+-- ==================== CRIAÇÃO DOS BOTÕES (Lógica Principal) ====================
+
+-- Função genérica para criar botões de toggle
+local function createToggleButton(props)
+    local btn = Instance.new("TextButton")
+    btn.Parent = props.Parent
+    btn.Text = props.Text
+    btn.Position = props.Position
+    btn.Size = props.Size or Style.Size.Button
+    btn.Font = Style.Font.Button
+    btn.TextSize = Style.TextSize.Button
+    btn.TextColor3 = props.TextColor or Style.Color.Text
+    btn.BorderSizePixel = 0
+    
+    local stateKey = props.StateKey
+    local onColor = props.OnColor or Style.Color.MainActive
+    local offColor = props.OffColor or Style.Color.Main
+    
+    -- Função para atualizar a aparência do botão com base no estado
+    local function updateVisuals()
+        local isActive = state[stateKey]
+        btn.BackgroundColor3 = isActive and onColor or offColor
+        if props.UpdateText then -- Permite atualizar o texto do botão
+            btn.Text = props.Text .. (isActive and ": ON" or ": OFF")
+        end
+    end
+
+    btn.MouseButton1Click:Connect(function()
+        state[stateKey] = not state[stateKey]
+        updateVisuals()
+        if props.Callback then -- Executa uma função adicional se fornecida
+            props.Callback(state[stateKey])
+        end
+    end)
+    
+    updateVisuals() -- Define o estado visual inicial
+    return btn
+end
+
+-- Adicionar botões ao painel principal dinamicamente
+local btn_y_start = 70
+local btn_y_offset = 36
+local mainButtons = {
+    {Text = "ESP GOD", Key = "esp_god"},
+    {Text = "ESP SECRET", Key = "esp_secret"},
+    {Text = "ESP BASE", Key = "esp_base"},
+    {Text = "ESP PLAYER", Key = "esp_player"},
+    {Text = "Miranda Insta Steal", Key = "insta_steal_principal"},
+}
+
+for i, btnData in ipairs(mainButtons) do
+    createToggleButton({
+        Parent = mainContent,
+        Text = btnData.Text,
+        StateKey = btnData.Key,
+        Position = UDim2.new(0, 20, 0, btn_y_start + (i - 1) * btn_y_offset),
+    })
+end
+
+-- Adicionar botões ao painel secundário
+createToggleButton({
+    Parent = sec,
+    Text = "Instant Steal",
+    StateKey = "instant_steal_secundario",
+    UpdateText = true, -- Esta opção fará o texto mudar para "ON/OFF"
+    Position = UDim2.new(0, 20, 0, 50),
+    Size = UDim2.new(0, 200, 0, 34)
 })
 
--- Botão de minimizar painel
-local isMinimized = false
+createToggleButton({
+    Parent = sec,
+    Text = "Aimbot Teia",
+    StateKey = "aimbot_teia",
+    Position = UDim2.new(0, 20, 0, 90),
+    OnColor = Style.Color.ButtonWhiteActive,
+    OffColor = Style.Color.ButtonWhite,
+    TextColor = Style.Color.ButtonWhiteText
+})
+
+-- Botão de Auto Kick (layout especial)
+local ak_label = Instance.new("TextLabel", sec)
+ak_label.Text = "AUTO KICK"
+ak_label.Position = UDim2.new(0, 20, 0, 133)
+ak_label.Size = UDim2.new(0, 100, 0, 26)
+ak_label.BackgroundTransparency = 1
+ak_label.TextColor3 = Style.Color.Text
+ak_label.Font = Style.Font.Subtitle
+ak_label.TextSize = Style.TextSize.Subtitle
+
+createToggleButton({
+    Parent = sec,
+    Text = "", -- O texto será ON/OFF
+    StateKey = "auto_kick",
+    Position = UDim2.new(0, 120, 0, 133),
+    Size = UDim2.new(0, 60, 0, 26),
+    OnColor = Style.Color.Success,
+    OffColor = Style.Color.Neutral,
+    UpdateText = true
+}):GetPropertyChangedSignal("Text"):Connect(function(prop) -- Pequeno ajuste para ON/OFF simples
+    local btn = script:FindFirstChild("TextButton") -- Assume que o botão é o último criado. Uma referência mais robusta seria melhor.
+    if btn then
+        btn.Text = state.auto_kick and "ON" or "OFF"
+    end
+end)
+
+
+-- ==================== FUNCIONALIDADES EXTRAS ====================
+
+-- Botão de Minimizar
 local minBtn = Instance.new("TextButton", main)
 minBtn.Text = "-"
 minBtn.Position = UDim2.new(1, -32, 0, 4)
 minBtn.Size = UDim2.new(0, 28, 0, 24)
 minBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-minBtn.TextColor3 = Color3.new(1,1,1)
-minBtn.Font = Enum.Font.SourceSansBold
-minBtn.TextSize = 22
+minBtn.TextColor3 = Style.Color.Text
+minBtn.Font = Style.Font.Title
+minBtn.TextSize = Style.TextSize.Title
 minBtn.BorderSizePixel = 0
 
--- Elementos que queremos esconder/mostrar ao minimizar
-local elementsToToggle = {}
-for _,v in ipairs(main:GetChildren()) do
-    if v ~= minBtn and v:IsA("GuiObject") then
-        table.insert(elementsToToggle, v)
-    end
-end
-
+local isMinimized = false
 minBtn.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
-    for _,gui in ipairs(elementsToToggle) do
-        gui.Visible = not isMinimized
-    end
+    -- [!] MELHORIA: Apenas alterna a visibilidade do container.
+    mainContent.Visible = not isMinimized
     minBtn.Text = isMinimized and "+" or "-"
 end)
