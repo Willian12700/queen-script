@@ -1,8 +1,9 @@
 --[[
-    Queen script - Versão 15.0 (Instant Steal - Teleporte para o Telhado)
-    - "Instant Steal" foi refeito para uma nova funcionalidade.
-    - MÉTODO: Ao roubar um brainrot, o script detecta o item sendo adicionado ao seu
-      personagem e te teleporta instantaneamente para o telhado da base mais próxima.
+    Queen script - Versão 16.1 (Otimizado para Celular)
+    - INSTANT STEAL: A tecla 'E' foi substituída por um BOTÃO DE TELEPORTE na tela,
+      que aparece no canto inferior direito apenas quando a função está ativa.
+    - UI: A posição inicial da logo e do painel principal foi ajustada para melhor
+      visualização em telas de celular.
 ]]
 
 -- ==================== VARIÁVEIS E SERVIÇOS ====================
@@ -26,14 +27,14 @@ local function makeDraggableWithSnap(draggableObject) local dragging, dragStart,
 
 -- ==================== CRIAÇÃO DA UI ====================
 local gui = Instance.new("ScreenGui", playerGui); gui.Name = "PainelMiranda"; gui.ResetOnSpawn = false
-local logoContainer = Instance.new("Frame", gui); logoContainer.Size = UDim2.new(0, 60, 0, 60); logoContainer.Position = UDim2.new(0, 20, 0, 150); logoContainer.BackgroundTransparency = 1
+local logoContainer = Instance.new("Frame", gui); logoContainer.Size = UDim2.new(0, 60, 0, 60); logoContainer.Position = UDim2.new(0, 20, 0, 250); logoContainer.BackgroundTransparency = 1
 local logoButton = Instance.new("ImageButton", logoContainer); logoButton.Size = UDim2.new(1, 0, 1, 0); logoButton.Image = "rbxassetid://COLE_O_ID_DA_SUA_IMAGEM_AQUI"; logoButton.BackgroundColor3 = Color3.fromRGB(10, 150, 10); logoButton.BackgroundTransparency = 0 
 local corner = Instance.new("UICorner", logoButton); corner.CornerRadius = UDim.new(0.5, 0); makeDraggableWithSnap(logoContainer)
-local main = Instance.new("Frame", gui); main.Name = "MainPanel"; main.BackgroundColor3 = Style.Color.Background; main.Size = Style.Size.MainPanel; main.Position = UDim2.new(0, 30, 0, 70); main.BorderSizePixel = 0; main.Visible = false
+local main = Instance.new("Frame", gui); main.Name = "MainPanel"; main.BackgroundColor3 = Style.Color.Background; main.Size = Style.Size.MainPanel; main.Position = UDim2.new(0.5, -120, 0.5, -170); main.BorderSizePixel = 0; main.Visible = false
 local mainContent = Instance.new("Frame", main); mainContent.Name = "Content"; mainContent.BackgroundTransparency = 1; mainContent.Size = UDim2.new(1, 0, 1, 0)
 local titleBar = Instance.new("TextLabel", main); titleBar.Text = "Queen script"; titleBar.Position = UDim2.new(0, 0, 0, 10); titleBar.Size = UDim2.new(1, 0, 0, 30); titleBar.BackgroundTransparency = 1; titleBar.TextColor3 = Style.Color.Text; titleBar.Font = Style.Font.Title; titleBar.TextSize = Style.TextSize.Title; makeDraggable(titleBar)
 local subtitle = Instance.new("TextLabel", mainContent); subtitle.Text = "TIKTOK: @mirandacalliruim"; subtitle.Position = UDim2.new(0, 0, 0, 40); subtitle.Size = UDim2.new(1, 0, 0, 20); subtitle.BackgroundTransparency = 1; subtitle.TextColor3 = Style.Color.Text; subtitle.Font = Style.Font.Subtitle; subtitle.TextSize = Style.TextSize.Subtitle
-local sec = Instance.new("Frame", gui); sec.Name = "SecPanel"; sec.BackgroundColor3 = Style.Color.Background; sec.Size = Style.Size.SecPanel; sec.Position = UDim2.new(0, 290, 0, 70); sec.BorderSizePixel = 0; sec.Visible = false
+local sec = Instance.new("Frame", gui); sec.Name = "SecPanel"; sec.BackgroundColor3 = Style.Color.Background; sec.Size = Style.Size.SecPanel; sec.Position = UDim2.new(0.5, -120, 0.5, -100); sec.BorderSizePixel = 0; sec.Visible = false
 local secTitle = Instance.new("TextLabel", sec); secTitle.Text = "INSTANT STEAL"; secTitle.Position = UDim2.new(0, 0, 0, 10); secTitle.Size = UDim2.new(1, 0, 0, 30); secTitle.BackgroundTransparency = 1; secTitle.TextColor3 = Style.Color.Text; secTitle.Font = Style.Font.Title; secTitle.TextSize = Style.TextSize.Title; makeDraggable(secTitle)
 local secPanelToggleButton; local function createToggleButton(props) local btn = Instance.new("TextButton"); btn.Parent, btn.Text, btn.Position, btn.Size, btn.Font, btn.TextSize, btn.TextColor3, btn.BorderSizePixel = props.Parent, props.Text, props.Position, props.Size or Style.Size.Button, Style.Font.Button, Style.TextSize.Button, props.TextColor or Style.Color.Text, 0; local stateKey, onColor, offColor = props.StateKey, props.OnColor or Style.Color.MainActive, props.OffColor or Style.Color.Main; local function updateVisuals() local isActive = state[stateKey]; btn.BackgroundColor3 = isActive and onColor or offColor; if props.UpdateText then btn.Text = (props.Text or "") .. (isActive and ": ON" or ": OFF") end end; btn.MouseButton1Click:Connect(function() state[stateKey] = not state[stateKey]; updateVisuals(); if props.Callback then props.Callback(state[stateKey]) end end); updateVisuals(); return btn end
 local btn_y_start, btn_y_offset = 70, 36; local mainButtons = { {Text = "ESP GOD", Key = "esp_god"}, {Text = "ESP SECRET", Key = "esp_secret"}, {Text = "ESP BASE", Key = "esp_base"}, {Text = "ESP PLAYER", Key = "esp_player"}, {Text = "Plataforma Voadora", Key = "fly_platform"} }
@@ -43,6 +44,31 @@ createToggleButton({ Parent = sec, Text = "Instant Steal", StateKey = "instant_s
 local ak_label = Instance.new("TextLabel", sec); ak_label.Text = "AUTO KICK"; ak_label.Position = UDim2.new(0, 20, 0, 133); ak_label.Size = UDim2.new(0, 100, 0, 26); ak_label.BackgroundTransparency = 1; ak_label.TextColor3 = Style.Color.Text; ak_label.Font = Style.Font.Subtitle; ak_label.TextSize = Style.TextSize.Subtitle
 local autoKickBtn = createToggleButton({ Parent = sec, Text = "OFF", StateKey = "auto_kick", Position = UDim2.new(0, 120, 0, 133), Size = UDim2.new(0, 60, 0, 26), OnColor = Style.Color.Success, OffColor = Style.Color.Neutral }); autoKickBtn:GetPropertyChangedSignal("BackgroundColor3"):Connect(function() autoKickBtn.Text = state.auto_kick and "ON" or "OFF" end)
 
+-- [!] INÍCIO DA NOVA SEÇÃO PARA CELULAR
+-- ==================== BOTÃO DE TELEPORTE PARA CELULAR ====================
+local teleportButton = Instance.new("TextButton", gui)
+teleportButton.Size = UDim2.new(0, 80, 0, 80)
+teleportButton.Position = UDim2.new(1, -100, 1, -180) -- Canto inferior direito
+teleportButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+teleportButton.TextColor3 = Color3.new(1, 1, 1)
+teleportButton.Text = "TP"
+teleportButton.Font = Enum.Font.SourceSansBold
+teleportButton.TextSize = 30
+teleportButton.Visible = false -- Começa invisível
+local tpCorner = Instance.new("UICorner", teleportButton); tpCorner.CornerRadius = UDim.new(0.5, 0)
+
+local function doTeleport()
+    local character = LocalPlayer.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local lookVector = Workspace.CurrentCamera.CFrame.LookVector
+        hrp.CFrame = hrp.CFrame + (lookVector * 15) -- Distância do teleporte
+    end
+end
+
+teleportButton.MouseButton1Click:Connect(doTeleport)
+-- =======================================================================
+
 -- ==================== LÓGICA DO ESP DE JOGADOR ====================
 local playerEspInstances = {}; local function criarEspParaJogador(player) if not player.Character or not player.Character:FindFirstChild("Head") then return end; local head = player.Character.Head; if playerEspInstances[player] then playerEspInstances[player]:Destroy() end; local espGui = Instance.new("BillboardGui"); espGui.Name, espGui.AlwaysOnTop, espGui.Size, espGui.MaxDistance, espGui.Adornee, espGui.StudsOffset, espGui.Enabled = "PlayerEspGui", true, UDim2.new(0, 150, 0, 70), math.huge, head, Vector3.new(0, 2.5, 0), false; local layout = Instance.new("UIListLayout", espGui); layout.SortOrder, layout.HorizontalAlignment, layout.Padding = Enum.SortOrder.LayoutOrder, Enum.HorizontalAlignment.Center, UDim.new(0, -5); local nameLabel = Instance.new("TextLabel", espGui); nameLabel.LayoutOrder, nameLabel.BackgroundTransparency, nameLabel.Size, nameLabel.Text, nameLabel.Font, nameLabel.TextColor3, nameLabel.TextSize, nameLabel.TextStrokeTransparency = 1, 1, UDim2.new(1, 0, 0, 20), player.Name, Enum.Font.SourceSans, Color3.new(1, 1, 1), 18, 0.5; local xLabel = Instance.new("TextLabel", espGui); xLabel.LayoutOrder, xLabel.BackgroundTransparency, xLabel.Size, xLabel.Text, xLabel.Font, xLabel.TextColor3, xLabel.TextSize, xLabel.TextStrokeTransparency = 2, 1, UDim2.new(1, 0, 0, 40), "X", Enum.Font.SourceSansBold, Color3.fromRGB(0, 255, 0), 40, 0; espGui.Parent, playerEspInstances[player] = head, espGui end
 local function setupJogador(player) if player == LocalPlayer then return end; player.CharacterAdded:Connect(function(character) if character:WaitForChild("Head", 10) then criarEspParaJogador(player) end end); if player.Character then criarEspParaJogador(player) end end
@@ -51,57 +77,8 @@ for _, player in ipairs(Players:GetPlayers()) do setupJogador(player) end; Playe
 -- ==================== LÓGICA DA PLATAFORMA VOADORA ====================
 local flyPlatformPart = nil; local FLY_SPEED = 0.5
 
--- ==================== LÓGICA DOS ESPs DE ITENS ====================
+-- ==================== LÓGICA DOS ESPs DE ITENS (VERSÃO 11.0 FUNCIONAL) ====================
 local wasEspSecretActive = false; local originalSecretProperties = {}; local wasEspGodActive = false; local originalGodProperties = {}
-
--- [!] INÍCIO DA NOVA SEÇÃO
--- ==================== LÓGICA DO INSTANT STEAL (TELEPORTE PÓS-ROUBO) ====================
-local function findClosestBase(position)
-    local closestBase, minDistance = nil, 100 -- Procura em um raio de 100 studs
-    local vaultsFolder = Workspace:FindFirstChild("Vaults") or Workspace
-
-    for _, item in ipairs(vaultsFolder:GetChildren()) do
-        if item:IsA("Model") and item.PrimaryPart then
-            local distance = (item.PrimaryPart.Position - position).Magnitude
-            if distance < minDistance then
-                minDistance = distance
-                closestBase = item
-            end
-        end
-    end
-    return closestBase
-end
-
-local function onCharacterChildAdded(child)
-    -- Só executa se a opção estiver ativa e se o item for um acessório de brainrot
-    if state.instant_steal_secundario and (child:IsA("Accessory") or child:IsA("Tool")) and child.Name:lower():find("brainrot") then
-        local character = LocalPlayer.Character
-        local hrp = character and character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-
-        -- Dá um pequeno tempo para o jogo registrar a posição pós-roubo
-        wait(0.1)
-        
-        local closestBase = findClosestBase(hrp.Position)
-        if closestBase then
-            -- Calcula a posição do telhado usando a "bounding box" do modelo
-            local cframe, size = closestBase:GetBoundingBox()
-            local roofPosition = cframe.Position + Vector3.new(0, size.Y / 2 + 3, 0) -- +3 para garantir que pouse em cima
-            
-            -- Teleporta o jogador
-            hrp.CFrame = CFrame.new(roofPosition)
-        end
-    end
-end
-
--- Conecta a função ao personagem do jogador
-if LocalPlayer.Character then
-    LocalPlayer.Character.ChildAdded:Connect(onCharacterChildAdded)
-end
-LocalPlayer.CharacterAdded:Connect(function(character)
-    character.ChildAdded:Connect(onCharacterChildAdded)
-end)
--- ===================================================================
 
 -- ==================== LOOP PRINCIPAL (RenderStepped) ====================
 RunService.RenderStepped:Connect(function()
@@ -111,9 +88,15 @@ RunService.RenderStepped:Connect(function()
     -- Loop da Plataforma Voadora
     if state.fly_platform then local character = LocalPlayer.Character; local hrp = character and character:FindFirstChild("HumanoidRootPart"); if hrp then if not flyPlatformPart then flyPlatformPart = Instance.new("Part"); flyPlatformPart.Name, flyPlatformPart.Size, flyPlatformPart.Color, flyPlatformPart.Material, flyPlatformPart.Anchored, flyPlatformPart.CanCollide, flyPlatformPart.Position, flyPlatformPart.Parent = "QueenFlyPlatform", Vector3.new(8, 1, 8), Color3.fromRGB(0, 255, 0), Enum.Material.Neon, true, true, hrp.Position - Vector3.new(0, 4, 0), Workspace end; local playerPos = hrp.Position; local newY = flyPlatformPart.Position.Y + FLY_SPEED; flyPlatformPart.CFrame = CFrame.new(playerPos.X, newY, playerPos.Z) end else if flyPlatformPart then flyPlatformPart:Destroy(); flyPlatformPart = nil end end
 
-    -- Loops de ESP de Itens
-    if state.esp_secret ~= wasEspSecretActive then wasEspSecretActive = state.esp_secret; if state.esp_secret then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local t = d:FindFirstChildOfClass("TextLabel", true); if t and t.Text:lower():find("secret") then originalSecretProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 400, 0, 150) end end end else for g, p in pairs(originalSecretProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalSecretProperties = {} end end
-    if state.esp_god ~= wasEspGodActive then wasEspGodActive = state.esp_god; if state.esp_god then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local t = d:FindFirstChildOfClass("TextLabel", true); if t and t.Text:lower():find("brainrot god") then originalGodProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 450, 0, 180) end end end else for g, p in pairs(originalGodProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalGodProperties = {} end end
+    -- Loop do ESP Secret
+    if state.esp_secret ~= wasEspSecretActive then wasEspSecretActive = state.esp_secret; if state.esp_secret then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local s = false; for _, c in ipairs(d:GetDescendants()) do if c:IsA("TextLabel") and c.Text:lower():find("secret") then s = true; break end end; if s then originalSecretProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 400, 0, 150) end end end else for g, p in pairs(originalSecretProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalSecretProperties = {} end end
+
+    -- Loop do ESP God
+    if state.esp_god ~= wasEspGodActive then wasEspGodActive = state.esp_god; if state.esp_god then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local g = false; for _, c in ipairs(d:GetDescendants()) do if c:IsA("TextLabel") and c.Text:lower():find("brainrot god") then g = true; break end end; if g then originalGodProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 450, 0, 180) end end end else for g, p in pairs(originalGodProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalGodProperties = {} end end
+
+    -- [!] Loop para mostrar/esconder o botão de teleporte
+    teleportButton.Visible = state.instant_steal_secundario
+
 end)
 -- =======================================================
 
