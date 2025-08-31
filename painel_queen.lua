@@ -137,3 +137,10 @@ ak_btn.MouseButton1Click:Connect(function()
     ak_btn.BackgroundColor3 = state.auto_kick and Color3.fromRGB(30,180,60) or Color3.fromRGB(90,90,90)
 end)
 criação painel miranda
+
+print("Painel carregado!")
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Painel Miranda";
+    Text = "Script carregado com sucesso!";
+    Duration = 5;
+})
