@@ -1,8 +1,8 @@
 --[[
-    Queen script - Versão 14.1 (Instant Steal - Bypass de Anti-Cheat)
-    - Lógica do "Instant Steal" refeita para burlar sistemas de anti-teleporte.
-    - MÉTODO: Em vez de teleportar o jogador, o script cria uma plataforma invisível,
-      prende o jogador nela, move a plataforma através da parede e depois a destrói.
+    Queen script - Versão 15.0 (Instant Steal - Teleporte para o Telhado)
+    - "Instant Steal" foi refeito para uma nova funcionalidade.
+    - MÉTODO: Ao roubar um brainrot, o script detecta o item sendo adicionado ao seu
+      personagem e te teleporta instantaneamente para o telhado da base mais próxima.
 ]]
 
 -- ==================== VARIÁVEIS E SERVIÇOS ====================
@@ -54,8 +54,54 @@ local flyPlatformPart = nil; local FLY_SPEED = 0.5
 -- ==================== LÓGICA DOS ESPs DE ITENS ====================
 local wasEspSecretActive = false; local originalSecretProperties = {}; local wasEspGodActive = false; local originalGodProperties = {}
 
--- ==================== LÓGICA DO INSTANT STEAL (WALL CLIP) ====================
-local isClipping = false
+-- [!] INÍCIO DA NOVA SEÇÃO
+-- ==================== LÓGICA DO INSTANT STEAL (TELEPORTE PÓS-ROUBO) ====================
+local function findClosestBase(position)
+    local closestBase, minDistance = nil, 100 -- Procura em um raio de 100 studs
+    local vaultsFolder = Workspace:FindFirstChild("Vaults") or Workspace
+
+    for _, item in ipairs(vaultsFolder:GetChildren()) do
+        if item:IsA("Model") and item.PrimaryPart then
+            local distance = (item.PrimaryPart.Position - position).Magnitude
+            if distance < minDistance then
+                minDistance = distance
+                closestBase = item
+            end
+        end
+    end
+    return closestBase
+end
+
+local function onCharacterChildAdded(child)
+    -- Só executa se a opção estiver ativa e se o item for um acessório de brainrot
+    if state.instant_steal_secundario and (child:IsA("Accessory") or child:IsA("Tool")) and child.Name:lower():find("brainrot") then
+        local character = LocalPlayer.Character
+        local hrp = character and character:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+
+        -- Dá um pequeno tempo para o jogo registrar a posição pós-roubo
+        wait(0.1)
+        
+        local closestBase = findClosestBase(hrp.Position)
+        if closestBase then
+            -- Calcula a posição do telhado usando a "bounding box" do modelo
+            local cframe, size = closestBase:GetBoundingBox()
+            local roofPosition = cframe.Position + Vector3.new(0, size.Y / 2 + 3, 0) -- +3 para garantir que pouse em cima
+            
+            -- Teleporta o jogador
+            hrp.CFrame = CFrame.new(roofPosition)
+        end
+    end
+end
+
+-- Conecta a função ao personagem do jogador
+if LocalPlayer.Character then
+    LocalPlayer.Character.ChildAdded:Connect(onCharacterChildAdded)
+end
+LocalPlayer.CharacterAdded:Connect(function(character)
+    character.ChildAdded:Connect(onCharacterChildAdded)
+end)
+-- ===================================================================
 
 -- ==================== LOOP PRINCIPAL (RenderStepped) ====================
 RunService.RenderStepped:Connect(function()
@@ -68,55 +114,6 @@ RunService.RenderStepped:Connect(function()
     -- Loops de ESP de Itens
     if state.esp_secret ~= wasEspSecretActive then wasEspSecretActive = state.esp_secret; if state.esp_secret then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local t = d:FindFirstChildOfClass("TextLabel", true); if t and t.Text:lower():find("secret") then originalSecretProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 400, 0, 150) end end end else for g, p in pairs(originalSecretProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalSecretProperties = {} end end
     if state.esp_god ~= wasEspGodActive then wasEspGodActive = state.esp_god; if state.esp_god then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local t = d:FindFirstChildOfClass("TextLabel", true); if t and t.Text:lower():find("brainrot god") then originalGodProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 450, 0, 180) end end end else for g, p in pairs(originalGodProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalGodProperties = {} end end
-
-    -- [!] NOVO LOOP PARA INSTANT STEAL (MÉTODO DA PLATAFORMA)
-    if state.instant_steal_secundario and not isClipping then
-        local character = LocalPlayer.Character
-        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        local hrp = humanoid and humanoid.RootPart
-        
-        if hrp and humanoid.MoveDirection.Magnitude > 0.1 then
-            local rayOrigin = hrp.Position
-            local rayDirection = humanoid.MoveDirection * 4
-            local raycastParams = RaycastParams.new(); raycastParams.FilterDescendantsInstances = {character}; raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-            local raycastResult = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-            
-            if raycastResult then
-                isClipping = true -- Inicia o processo de atravessar
-                
-                local wallPosition = raycastResult.Position
-                local moveDirection = humanoid.MoveDirection
-                
-                -- Cria a plataforma fantasma
-                local clipPlatform = Instance.new("Part")
-                clipPlatform.Name = "QueenClipPlatform"
-                clipPlatform.Size = Vector3.new(4, 1, 4)
-                clipPlatform.Anchored = true
-                clipPlatform.CanCollide = false
-                clipPlatform.Transparency = 1
-                clipPlatform.CFrame = hrp.CFrame * CFrame.new(0, -3, 0)
-                clipPlatform.Parent = Workspace
-
-                -- Prende o jogador na plataforma
-                humanoid.PlatformStand = true
-
-                -- Move a plataforma através da parede
-                local goalPosition = wallPosition + (moveDirection * 6)
-                local tweenInfo = TweenInfo.new(0.2) -- Velocidade do teleporte
-                local tween = TweenService:Create(clipPlatform, tweenInfo, {Position = goalPosition})
-                tween:Play()
-
-                tween.Completed:Wait() -- Espera o movimento terminar
-
-                -- Solta o jogador e limpa tudo
-                humanoid.PlatformStand = false
-                clipPlatform:Destroy()
-                
-                wait(0.5) -- Intervalo para evitar ativação dupla
-                isClipping = false
-            end
-        end
-    end
 end)
 -- =======================================================
 
