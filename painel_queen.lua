@@ -1,9 +1,8 @@
 --[[
-    Queen script - Versão 16.1 (Otimizado para Celular)
-    - INSTANT STEAL: A tecla 'E' foi substituída por um BOTÃO DE TELEPORTE na tela,
-      que aparece no canto inferior direito apenas quando a função está ativa.
-    - UI: A posição inicial da logo e do painel principal foi ajustada para melhor
-      visualização em telas de celular.
+    Queen script - Versão 16.2 (Plataforma Fantasma para Celular)
+    - INSTANT STEAL: Lógica de teleporte refeita para usar o método da "plataforma fantasma",
+      que tem maior chance de bypassar sistemas de anti-cheat.
+    - O botão "TP" na tela agora ativa este novo método.
 ]]
 
 -- ==================== VARIÁVEIS E SERVIÇOS ====================
@@ -47,26 +46,37 @@ local autoKickBtn = createToggleButton({ Parent = sec, Text = "OFF", StateKey = 
 -- [!] INÍCIO DA NOVA SEÇÃO PARA CELULAR
 -- ==================== BOTÃO DE TELEPORTE PARA CELULAR ====================
 local teleportButton = Instance.new("TextButton", gui)
-teleportButton.Size = UDim2.new(0, 80, 0, 80)
-teleportButton.Position = UDim2.new(1, -100, 1, -180) -- Canto inferior direito
-teleportButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-teleportButton.TextColor3 = Color3.new(1, 1, 1)
-teleportButton.Text = "TP"
-teleportButton.Font = Enum.Font.SourceSansBold
-teleportButton.TextSize = 30
-teleportButton.Visible = false -- Começa invisível
+teleportButton.Size = UDim2.new(0, 80, 0, 80); teleportButton.Position = UDim2.new(1, -100, 1, -180); teleportButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255); teleportButton.TextColor3 = Color3.new(1, 1, 1); teleportButton.Text = "TP"; teleportButton.Font = Enum.Font.SourceSansBold; teleportButton.TextSize = 30; teleportButton.Visible = false
 local tpCorner = Instance.new("UICorner", teleportButton); tpCorner.CornerRadius = UDim.new(0.5, 0)
+local isClipping = false
 
-local function doTeleport()
+local function doTeleportPlatform()
+    if isClipping then return end
     local character = LocalPlayer.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local lookVector = Workspace.CurrentCamera.CFrame.LookVector
-        hrp.CFrame = hrp.CFrame + (lookVector * 15) -- Distância do teleporte
-    end
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local hrp = humanoid and humanoid.RootPart
+    if not hrp then return end
+
+    isClipping = true
+    
+    local moveDirection = Workspace.CurrentCamera.CFrame.LookVector
+    local clipPlatform = Instance.new("Part"); clipPlatform.Name = "QueenClipPlatform"; clipPlatform.Size = Vector3.new(4, 1, 4); clipPlatform.Anchored = true; clipPlatform.CanCollide = false; clipPlatform.Transparency = 1; clipPlatform.CFrame = hrp.CFrame * CFrame.new(0, -3, 0); clipPlatform.Parent = Workspace
+    
+    humanoid.PlatformStand = true
+    
+    local goalPosition = clipPlatform.Position + (moveDirection * 15) -- Distância do teleporte
+    local tween = TweenService:Create(clipPlatform, TweenInfo.new(0.15), {Position = goalPosition})
+    tween:Play()
+    tween.Completed:Wait()
+    
+    humanoid.PlatformStand = false
+    clipPlatform:Destroy()
+    
+    wait(0.5)
+    isClipping = false
 end
 
-teleportButton.MouseButton1Click:Connect(doTeleport)
+teleportButton.MouseButton1Click:Connect(doTeleportPlatform)
 -- =======================================================================
 
 -- ==================== LÓGICA DO ESP DE JOGADOR ====================
@@ -88,15 +98,12 @@ RunService.RenderStepped:Connect(function()
     -- Loop da Plataforma Voadora
     if state.fly_platform then local character = LocalPlayer.Character; local hrp = character and character:FindFirstChild("HumanoidRootPart"); if hrp then if not flyPlatformPart then flyPlatformPart = Instance.new("Part"); flyPlatformPart.Name, flyPlatformPart.Size, flyPlatformPart.Color, flyPlatformPart.Material, flyPlatformPart.Anchored, flyPlatformPart.CanCollide, flyPlatformPart.Position, flyPlatformPart.Parent = "QueenFlyPlatform", Vector3.new(8, 1, 8), Color3.fromRGB(0, 255, 0), Enum.Material.Neon, true, true, hrp.Position - Vector3.new(0, 4, 0), Workspace end; local playerPos = hrp.Position; local newY = flyPlatformPart.Position.Y + FLY_SPEED; flyPlatformPart.CFrame = CFrame.new(playerPos.X, newY, playerPos.Z) end else if flyPlatformPart then flyPlatformPart:Destroy(); flyPlatformPart = nil end end
 
-    -- Loop do ESP Secret
+    -- Loops de ESP de Itens
     if state.esp_secret ~= wasEspSecretActive then wasEspSecretActive = state.esp_secret; if state.esp_secret then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local s = false; for _, c in ipairs(d:GetDescendants()) do if c:IsA("TextLabel") and c.Text:lower():find("secret") then s = true; break end end; if s then originalSecretProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 400, 0, 150) end end end else for g, p in pairs(originalSecretProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalSecretProperties = {} end end
-
-    -- Loop do ESP God
     if state.esp_god ~= wasEspGodActive then wasEspGodActive = state.esp_god; if state.esp_god then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local g = false; for _, c in ipairs(d:GetDescendants()) do if c:IsA("TextLabel") and c.Text:lower():find("brainrot god") then g = true; break end end; if g then originalGodProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 450, 0, 180) end end end else for g, p in pairs(originalGodProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalGodProperties = {} end end
 
-    -- [!] Loop para mostrar/esconder o botão de teleporte
+    -- Loop para mostrar/esconder o botão de teleporte
     teleportButton.Visible = state.instant_steal_secundario
-
 end)
 -- =======================================================
 
