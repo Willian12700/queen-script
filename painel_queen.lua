@@ -1,8 +1,9 @@
 --[[
-    Queen script - Versão 17.0 (ESP de Caixas de Coleta)
-    - ESP BASE foi completamente refeito com base no vídeo.
-    - Agora ele funciona como um "ESP de Caixas", procurando por `BillboardGui`s
-      que contenham a palavra "Coletar" e tornando-as visíveis de longe.
+    Queen script - Versão 17.1 (Correção de Sintaxe)
+    - Corrigido um erro de sintaxe na criação do botão "BASE" que impedia
+      o script inteiro de ser executado.
+    - Todas as funcionalidades, incluindo o novo ESP de Caixas, devem agora
+      funcionar como esperado.
 ]]
 
 -- ==================== VARIÁVEIS E SERVIÇOS ====================
@@ -42,8 +43,21 @@ secPanelToggleButton = createToggleButton({ Parent = mainContent, Text = "Mirand
 createToggleButton({ Parent = sec, Text = "Instant Steal", StateKey = "instant_steal_secundario", UpdateText = true, Position = UDim2.new(0, 20, 0, 50), Size = UDim2.new(0, 200, 0, 34) }); createToggleButton({ Parent = sec, Text = "Aimbot Teia", StateKey = "aimbot_teia", Position = UDim2.new(0, 20, 0, 90), OnColor = Style.Color.ButtonWhiteActive, OffColor = Style.Color.ButtonWhite, TextColor = Style.Color.ButtonWhiteText })
 local ak_label = Instance.new("TextLabel", sec); ak_label.Text = "AUTO KICK"; ak_label.Position = UDim2.new(0, 20, 0, 133); ak_label.Size = UDim2.new(0, 100, 0, 26); ak_label.BackgroundTransparency = 1; ak_label.TextColor3 = Style.Color.Text; ak_label.Font = Style.Font.Subtitle; ak_label.TextSize = Style.TextSize.Subtitle
 local autoKickBtn = createToggleButton({ Parent = sec, Text = "OFF", StateKey = "auto_kick", Position = UDim2.new(0, 120, 0, 133), Size = UDim2.new(0, 60, 0, 26), OnColor = Style.Color.Success, OffColor = Style.Color.Neutral }); autoKickBtn:GetPropertyChangedSignal("BackgroundColor3"):Connect(function() autoKickBtn.Text = state.auto_kick and "ON" or "OFF" end)
-local returnButton = Instance.new("TextButton", gui); returnButton.Size = UDim2.new(0, 80, 0, 80); returnButton.Position = UDim2.new(1, -100, 1, -180); returnButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255); returnButton.TextColor3 = Color3.new(1, 1, 1); returnButton.Text = "BASE"; returnButton.Font = Enum.Font.SourceSansBold; returnButton.TextSize = 24; returnButton.Visible = false
-local rbCorner = Instance.new("UICorner", returnButton); rbCorner.CornerRadius = UDim.new(0.5, 0); local function teleportToBase() local char = LocalPlayer.Character; local hrp = char and char:FindFirstChild("HumanoidRootPart"); if not hrp then return end; local plots = Workspace:FindFirstChild("Plots") or Workspace; local base = plots:FindFirstChild(LocalPlayer.Name); if base and base.PrimaryPart then hrp.CFrame = base.PrimaryPart.CFrame * CFrame.new(0, 5, 0) else warn("Base não encontrada.") end end; returnButton.MouseButton1Click:Connect(teleportToBase)
+
+-- [!] CÓDIGO CORRIGIDO
+local returnButton = Instance.new("TextButton", gui)
+returnButton.Size = UDim2.new(0, 80, 0, 80)
+returnButton.Position = UDim2.new(1, -100, 1, -180)
+returnButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+returnButton.TextColor3 = Color3.new(1, 1, 1)
+returnButton.Text = "BASE"
+returnButton.Font = Enum.Font.SourceSansBold
+returnButton.TextSize = 24
+returnButton.Visible = false
+local rbCorner = Instance.new("UICorner", returnButton); rbCorner.CornerRadius = UDim.new(0.5, 0)
+local function teleportToBase() local char = LocalPlayer.Character; local hrp = char and char:FindFirstChild("HumanoidRootPart"); if not hrp then return end; local plots = Workspace:FindFirstChild("Plots") or Workspace; local base = plots:FindFirstChild(LocalPlayer.Name); if base and base.PrimaryPart then hrp.CFrame = base.PrimaryPart.CFrame * CFrame.new(0, 5, 0) else warn("Base não encontrada.") end end
+returnButton.MouseButton1Click:Connect(teleportToBase)
+-- FIM DA CORREÇÃO
 
 -- ==================== LÓGICA DO ESP DE JOGADOR ====================
 local playerEspInstances = {}; local function criarEspParaJogador(player) if not player.Character or not player.Character:FindFirstChild("Head") then return end; local head = player.Character.Head; if playerEspInstances[player] then playerEspInstances[player]:Destroy() end; local espGui = Instance.new("BillboardGui"); espGui.Name, espGui.AlwaysOnTop, espGui.Size, espGui.MaxDistance, espGui.Adornee, espGui.StudsOffset, espGui.Enabled = "PlayerEspGui", true, UDim2.new(0, 150, 0, 70), math.huge, head, Vector3.new(0, 2.5, 0), false; local layout = Instance.new("UIListLayout", espGui); layout.SortOrder, layout.HorizontalAlignment, layout.Padding = Enum.SortOrder.LayoutOrder, Enum.HorizontalAlignment.Center, UDim.new(0, -5); local nameLabel = Instance.new("TextLabel", espGui); nameLabel.LayoutOrder, nameLabel.BackgroundTransparency, nameLabel.Size, nameLabel.Text, nameLabel.Font, nameLabel.TextColor3, nameLabel.TextSize, nameLabel.TextStrokeTransparency = 1, 1, UDim2.new(1, 0, 0, 20), player.Name, Enum.Font.SourceSans, Color3.new(1, 1, 1), 18, 0.5; local xLabel = Instance.new("TextLabel", espGui); xLabel.LayoutOrder, xLabel.BackgroundTransparency, xLabel.Size, xLabel.Text, xLabel.Font, xLabel.TextColor3, xLabel.TextSize, xLabel.TextStrokeTransparency = 2, 1, UDim2.new(1, 0, 0, 40), "X", Enum.Font.SourceSansBold, Color3.fromRGB(0, 255, 0), 40, 0; espGui.Parent, playerEspInstances[player] = head, espGui end
@@ -55,7 +69,7 @@ local flyPlatformPart = nil; local FLY_SPEED = 0.5
 
 -- ==================== LÓGICA DOS ESPs DE ITENS ====================
 local wasEspSecretActive = false; local originalSecretProperties = {}; local wasEspGodActive = false; local originalGodProperties = {}
-local wasEspBaseActive = false; local originalBaseProperties = {} -- [!] NOVO PARA O ESP DE CAIXAS
+local wasEspBaseActive = false; local originalBaseProperties = {} 
 
 -- ==================== LOOP PRINCIPAL (RenderStepped) ====================
 RunService.RenderStepped:Connect(function()
@@ -65,35 +79,10 @@ RunService.RenderStepped:Connect(function()
     -- Loop da Plataforma Voadora
     if state.fly_platform then local char = LocalPlayer.Character; local hrp = char and char:FindFirstChild("HumanoidRootPart"); if hrp then if not flyPlatformPart then flyPlatformPart = Instance.new("Part"); flyPlatformPart.Name, flyPlatformPart.Size, flyPlatformPart.Color, flyPlatformPart.Material, flyPlatformPart.Anchored, flyPlatformPart.CanCollide, flyPlatformPart.Position, flyPlatformPart.Parent = "QueenFlyPlatform", Vector3.new(8, 1, 8), Color3.fromRGB(0, 255, 0), Enum.Material.Neon, true, true, hrp.Position - Vector3.new(0, 4, 0), Workspace end; local pos = hrp.Position; local newY = flyPlatformPart.Position.Y + FLY_SPEED; flyPlatformPart.CFrame = CFrame.new(pos.X, newY, pos.Z) end else if flyPlatformPart then flyPlatformPart:Destroy(); flyPlatformPart = nil end end
 
-    -- Loop do ESP Secret
+    -- Loops de ESP de Itens
     if state.esp_secret ~= wasEspSecretActive then wasEspSecretActive = state.esp_secret; if state.esp_secret then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local s = false; for _, c in ipairs(d:GetDescendants()) do if c:IsA("TextLabel") and c.Text:lower():find("secret") then s = true; break end end; if s then originalSecretProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 400, 0, 150) end end end else for g, p in pairs(originalSecretProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalSecretProperties = {} end end
-
-    -- Loop do ESP God
     if state.esp_god ~= wasEspGodActive then wasEspGodActive = state.esp_god; if state.esp_god then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local g = false; for _, c in ipairs(d:GetDescendants()) do if c:IsA("TextLabel") and c.Text:lower():find("brainrot god") then g = true; break end end; if g then originalGodProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 450, 0, 180) end end end else for g, p in pairs(originalGodProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalGodProperties = {} end end
-
-    -- [!] NOVO LOOP PARA ESP DE CAIXAS (BASE)
-    if state.esp_base ~= wasEspBaseActive then
-        wasEspBaseActive = state.esp_base
-        if state.esp_base then
-            for _, descendant in ipairs(Workspace:GetDescendants()) do
-                if descendant:IsA("BillboardGui") then
-                    local isCollectable = false
-                    for _, child in ipairs(descendant:GetDescendants()) do
-                        if child:IsA("TextLabel") and child.Text:lower():find("coletar") then isCollectable = true; break end
-                    end
-                    if isCollectable then
-                        originalBaseProperties[descendant] = { AlwaysOnTop = descendant.AlwaysOnTop, LightInfluence = descendant.LightInfluence, MaxDistance = descendant.MaxDistance, Size = descendant.Size }
-                        descendant.AlwaysOnTop, descendant.LightInfluence, descendant.MaxDistance, descendant.Size = true, 0, math.huge, UDim2.new(0, 300, 0, 100)
-                    end
-                end
-            end
-        else
-            for gui, props in pairs(originalBaseProperties) do
-                if gui and gui.Parent then gui.AlwaysOnTop, gui.LightInfluence, gui.MaxDistance, gui.Size = props.AlwaysOnTop, props.LightInfluence, props.MaxDistance, props.Size end
-            end
-            originalBaseProperties = {}
-        end
-    end
+    if state.esp_base ~= wasEspBaseActive then wasEspBaseActive = state.esp_base; if state.esp_base then for _, d in ipairs(Workspace:GetDescendants()) do if d:IsA("BillboardGui") then local isCollectable = false; for _, c in ipairs(d:GetDescendants()) do if c:IsA("TextLabel") and c.Text:lower():find("coletar") then isCollectable = true; break end end; if isCollectable then originalBaseProperties[d] = { AlwaysOnTop = d.AlwaysOnTop, LightInfluence = d.LightInfluence, MaxDistance = d.MaxDistance, Size = d.Size }; d.AlwaysOnTop, d.LightInfluence, d.MaxDistance, d.Size = true, 0, math.huge, UDim2.new(0, 300, 0, 100) end end end else for g, p in pairs(originalBaseProperties) do if g and g.Parent then g.AlwaysOnTop, g.LightInfluence, g.MaxDistance, g.Size = p.AlwaysOnTop, p.LightInfluence, p.MaxDistance, p.Size end end; originalBaseProperties = {} end end
 
     -- Loop para mostrar/esconder o botão de teleporte para a base
     returnButton.Visible = state.instant_steal_secundario
@@ -104,4 +93,4 @@ end)
 local closeBtn = Instance.new("TextButton", main); closeBtn.Text = "X"; closeBtn.Position = UDim2.new(1, -32, 0, 4); closeBtn.Size = UDim2.new(0, 28, 0, 24); closeBtn.BackgroundColor3 = Color3.fromRGB(40,40,40); closeBtn.TextColor3 = Style.Color.Text; closeBtn.Font = Style.Font.Title; closeBtn.TextSize = Style.TextSize.Title; closeBtn.BorderSizePixel = 0
 local function closeAllPanels() main.Visible, sec.Visible = false, false; if state.is_sec_panel_open then state.is_sec_panel_open = false; secPanelToggleButton.BackgroundColor3 = Style.Color.Main end end
 closeBtn.MouseButton1Click:Connect(closeAllPanels)
-logoButton.MouseButton1Click:Connect(function() if main.Visible then closeAllPanels() else main.Visible = true end end)```
+logoButton.MouseButton1Click:Connect(function() if main.Visible then closeAllPanels() else main.Visible = true end end)
